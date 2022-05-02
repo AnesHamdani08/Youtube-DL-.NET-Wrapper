@@ -1,5 +1,4 @@
 ﻿Imports Newtonsoft
-Imports AUDX.Plugins.Utils
 Namespace Youtube
     Public Class YoutubeDL
         Public Property YoutubeDLLocation As String
@@ -156,13 +155,24 @@ Namespace Youtube
             If URL.ToLower.Contains("youtu.be") Then Return True 'https://youtu.be/PKfxmFU3lWY?list=RDPKfxmFU3lWY
             Return False
         End Function
+         <System.Runtime.InteropServices.DllImport("wininet.dll")>
+        Private Shared Function InternetGetConnectedState(ByRef Description As Integer, ByVal ReservedValue As Integer) As Boolean
+        End Function
+        Public Shared Function CheckInternetConnection() As Boolean
+            Try
+                Dim ConnDesc As Integer
+                Return InternetGetConnectedState(ConnDesc, 0)
+            Catch
+                Return False
+            End Try
+        End Function
         Public Shared Function IsYoutubePlaylistLink(URL As String) As Boolean
             'https://www.youtube.com/playlist?list=PLzSjbEiFKZ_w9zWXjVSTLi5FUlcPHwQCc
             If URL.Contains("youtube.com/playlist?list=") Then Return True
             Return False
         End Function
         Public Async Function GetVideo(URL As String, Q As YoutubeVideo.Quality) As Task(Of YoutubeVideo)
-            If Utils.CheckInternetConnection Then
+            If CheckInternetConnection Then
                 Return Await Task.Run(Function()
                                           Dim YoutubeDL As Process = Process.Start(New ProcessStartInfo(YoutubeDLLocation, "-s -e -g -f " & Q.ToString & Space(1) & URL) With {.RedirectStandardOutput = True, .UseShellExecute = False, .WindowStyle = ProcessWindowStyle.Hidden, .CreateNoWindow = True})
                                           Dim Info = YoutubeDL.StandardOutput.ReadToEnd.Split(New Char() {vbCr, vbCrLf, vbLf})
@@ -175,7 +185,7 @@ Namespace Youtube
         End Function
         Public Async Function SearchVideo(Query As String, Limit As Integer) As Task(Of String())
             If Limit > 1 Then
-                If Utils.CheckInternetConnection Then
+                If CheckInternetConnection Then
                     Return Await Task.Run(Function()
                                               Dim YoutubeDL As Process = Process.Start(New ProcessStartInfo(YoutubeDLLocation, """ytsearch" & Limit & ":" & Query & """ --get-id") With {.RedirectStandardOutput = True, .UseShellExecute = False, .WindowStyle = ProcessWindowStyle.Hidden, .CreateNoWindow = True})
                                               Dim out = YoutubeDL.StandardOutput.ReadToEnd
@@ -187,7 +197,7 @@ Namespace Youtube
         End Function
         Public Async Function SearchVideoAndDump(Query As String, Limit As Integer) As Task(Of IEnumerable(Of YoutubeVideo))
             If Limit > 1 Then
-                If Utils.CheckInternetConnection Then
+                If CheckInternetConnection Then
                     Return Await Task.Run(Async Function()
                                               Try
                                                   Dim YoutubeDL As Process = Process.Start(New ProcessStartInfo(YoutubeDLLocation, """ytsearch" & Limit & ":" & Query & """ -J") With {.RedirectStandardOutput = True, .UseShellExecute = False, .WindowStyle = ProcessWindowStyle.Hidden, .CreateNoWindow = True})
@@ -208,7 +218,7 @@ Namespace Youtube
             Return Nothing
         End Function
         Public Async Function SearchVideo(Query As String) As Task(Of String)
-            If Utils.CheckInternetConnection Then
+            If CheckInternetConnection Then
                 Return Await Task.Run(Function()
                                           Dim YoutubeDL As Process = Process.Start(New ProcessStartInfo(YoutubeDLLocation, """ytsearch:" & Query & """ --get-id") With {.RedirectStandardOutput = True, .UseShellExecute = False, .WindowStyle = ProcessWindowStyle.Hidden, .CreateNoWindow = True})
                                           Return YoutubeDL.StandardOutput.ReadToEnd
@@ -218,7 +228,7 @@ Namespace Youtube
             End If
         End Function
         Public Async Function SearchVideoAndDump(Query As String) As Task(Of YoutubeVideo)
-            If Utils.CheckInternetConnection Then
+            If CheckInternetConnection Then
                 Return Await Task.Run(Async Function()
                                           Dim YoutubeDL As Process = Process.Start(New ProcessStartInfo(YoutubeDLLocation, """ytsearch:" & Query & """ -j") With {.RedirectStandardOutput = True, .UseShellExecute = False, .WindowStyle = ProcessWindowStyle.Hidden, .CreateNoWindow = True})
                                           Dim Info = YoutubeDL.StandardOutput.ReadToEnd
@@ -229,7 +239,7 @@ Namespace Youtube
             End If
         End Function
         Public Async Function DumpAndManagePlaylist(URL As String, Optional SkipURLCheck As Boolean = False) As Task(Of IEnumerable(Of YoutubeVideo))
-            If Utils.CheckInternetConnection Then
+            If CheckInternetConnection Then
                 If SkipURLCheck = False Then
                     If Not IsYoutubePlaylistLink(URL) Then Return Nothing
                 End If
@@ -538,7 +548,7 @@ Namespace Youtube
                                   End Function)
         End Function
         Public Async Function DumpAndManageVideo(URL As String, Optional SkipURLCheck As Boolean = False) As Task(Of YoutubeVideo)
-            If Utils.CheckInternetConnection Then
+            If CheckInternetConnection Then
                 If SkipURLCheck = False Then
                     If IsYoutubeLink(URL) = False Then Return Nothing
                 End If
